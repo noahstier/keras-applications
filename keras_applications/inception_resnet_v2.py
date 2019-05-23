@@ -165,10 +165,33 @@ def inception_resnet_block(x, scale, block_type, block_idx, activation='relu'):
                    use_bias=True,
                    name=block_name + '_conv')
 
-    x = layers.Lambda(lambda inputs, scale: inputs[0] + inputs[1] * scale,
-                      output_shape=backend.int_shape(x)[1:],
-                      arguments={'scale': scale},
-                      name=block_name)([x, up])
+    class ScalarMultiply17(layers.Layer):
+        def call(self, x):
+            return x * .17
+
+    class ScalarMultiply1(layers.Layer):
+        def call(self, x):
+            return x * .1
+
+    class ScalarMultiply2(layers.Layer):
+        def call(self, x):
+            return x * .2
+
+    class ScalarMultiply10(layers.Layer):
+        def call(self, x):
+            return x * 1
+
+    if scale == .17:
+        _x = ScalarMultiply17()(x)
+    elif scale == .1:
+        _x = ScalarMultiply1()(x)
+    elif scale == .2:
+        _x = ScalarMultiply2()(x)
+    elif scale == 1:
+        _x = ScalarMultiply10()(x)
+
+    x = layers.Add(name=block_name)([x, _x])
+
     if activation is not None:
         x = layers.Activation(activation, name=block_name + '_ac')(x)
     return x
